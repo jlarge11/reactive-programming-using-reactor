@@ -1,13 +1,18 @@
 package com.learnreactiveprogramming.service;
 
 import com.learnreactiveprogramming.domain.Movie;
+import com.learnreactiveprogramming.domain.MovieInfo;
+import com.learnreactiveprogramming.domain.Revenue;
+import com.learnreactiveprogramming.domain.Review;
 import com.learnreactiveprogramming.exception.MovieException;
 import lombok.AllArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.util.List;
 
 @AllArgsConstructor
 public class MovieReactiveService {
@@ -47,12 +52,22 @@ public class MovieReactiveService {
     }
 
     public Mono<Movie> getMovie(long movieId) {
-        return movieInfoService.retrieveMovieInfoMonoUsingId(movieId)
-            .flatMap(movieInfo ->
-                reviewService.retrieveReviewsFlux(movieId)
-                    .collectList()
-                    .map(reviews -> new Movie(movieInfo, reviews))
-            );
+
+        Mono<MovieInfo> movieInfoMono = movieInfoService.retrieveMovieInfoMonoUsingId(movieId);
+
+        Mono<List<Review>> reviewsMono = reviewService.retrieveReviewsFlux(movieId)
+            .collectList();
+
+        Mono<Revenue> revenueMono = Mono.fromCallable(() -> revenueService.getRevenue(movieId))
+            .subscribeOn(Schedulers.boundedElastic());
+
+        return movieInfoMono
+            .zipWith(reviewsMono, Movie::new)
+            .zipWith(revenueMono, (movie, revenue) -> {
+                movie.setRevenue(revenue);
+                return movie;
+            });
+
     }
 
     public Mono<Movie> getMovieUsingZipWith(long movieId) {

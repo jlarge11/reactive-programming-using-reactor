@@ -2,6 +2,7 @@ package com.learnreactiveprogramming.service;
 
 import com.learnreactiveprogramming.domain.Movie;
 import com.learnreactiveprogramming.domain.MovieInfo;
+import com.learnreactiveprogramming.domain.Revenue;
 import com.learnreactiveprogramming.domain.Review;
 import com.learnreactiveprogramming.exception.MovieException;
 import org.junit.jupiter.api.Test;
@@ -79,8 +80,13 @@ class MovieReactiveServiceTest {
                 List.of(
                     new Review(1L, 100L, "Awesome Movie", 8.9),
                     new Review(2L, 100L, "Excellent Movie", 9.0)
-                ))
-            )
+                ),
+                Revenue.builder()
+                    .movieInfoId(100L)
+                    .budget(1000000)
+                    .boxOffice(5000000)
+                    .build()
+            ))
             .verifyComplete();
     }
 
