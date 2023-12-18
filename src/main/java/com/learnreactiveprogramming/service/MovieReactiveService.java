@@ -6,6 +6,7 @@ import com.learnreactiveprogramming.domain.Revenue;
 import com.learnreactiveprogramming.domain.Review;
 import com.learnreactiveprogramming.exception.MovieException;
 import lombok.AllArgsConstructor;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -20,6 +21,37 @@ public class MovieReactiveService {
     private final MovieInfoService movieInfoService;
     private final ReviewService reviewService;
     private final RevenueService revenueService;
+    private final WebClient webClient;
+
+
+    public Flux<Movie> getAllMoviesFromApi() {
+        return webClient.get()
+            .uri("/v1/movie_infos")
+            .retrieve()
+            .bodyToFlux(MovieInfo.class)
+            .flatMap(movieInfo ->
+                reviewService.retrieveReviewsFromApi(movieInfo.getMovieInfoId())
+                    .collectList()
+                    .map(reviews -> new Movie(movieInfo, reviews))
+            );
+    }
+
+    public Mono<Movie> getMovieFromApi(long id) {
+       return webClient.get()
+            .uri("/v1/movie_infos/{id}", id)
+            .retrieve()
+            .bodyToMono(MovieInfo.class)
+            .flatMap(movieInfo ->
+                reviewService.retrieveReviewsFromApi(movieInfo.getMovieInfoId())
+                    .collectList()
+                    .map(reviews -> new Movie(movieInfo, reviews))
+            );
+    }
+
+
+
+
+
 
     public Flux<Movie> getAllMovies() {
         return movieInfoService.retrieveMoviesFlux()

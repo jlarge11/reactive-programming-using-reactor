@@ -1,11 +1,36 @@
 package com.learnreactiveprogramming.service;
 
 import com.learnreactiveprogramming.domain.Review;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
 public class ReviewService {
+
+    private WebClient webClient;
+
+    public ReviewService() {
+    }
+
+    public ReviewService(WebClient webClient) {
+        this.webClient = webClient;
+    }
+
+    public Flux<Review> retrieveReviewsFromApi(long movieInfoId) {
+        String uri = UriComponentsBuilder.fromUriString("/v1/reviews")
+            .queryParam("movieInfoId", movieInfoId)
+            .buildAndExpand()
+            .toUriString();
+
+        return webClient.get()
+            .uri(uri)
+            .retrieve()
+            .bodyToFlux(Review.class);
+    }
 
     public  List<Review> retrieveReviews(long movieInfoId){
 
